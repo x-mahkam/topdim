@@ -45,6 +45,13 @@ async def test_search_by_keyword_and_category(db):
     assert await queries.count_search_items(db, ["qora", "sumka"], None) == 0
 
 
+async def test_search_by_place_name(db):
+    await queries.create_item(db, new_item(place="library"))
+    await queries.create_item(db, new_item(place="other", place_note="Avtobus bekati"))
+    assert await queries.count_search_items(db, ["kutubxona"], None) == 1
+    assert await queries.count_search_items(db, ["bekati"], None) == 1
+
+
 async def test_search_escapes_like_wildcards(db):
     await queries.create_item(db, new_item(title="Hamyon"))
     assert await queries.count_search_items(db, ["%"], None) == 0

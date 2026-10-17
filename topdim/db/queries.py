@@ -10,6 +10,7 @@ from datetime import date, datetime, timezone
 
 from topdim.db.database import Database
 from topdim.db.models import Item, ItemKind, ItemStatus
+from topdim.locales import uz
 from topdim.services.text import normalize
 
 
@@ -59,7 +60,9 @@ async def create_item(db: Database, item: NewItem) -> int:
     """Yangi e'lon yaratadi va uning ID'sini qaytaradi."""
     await ensure_user(db, item.owner_id)
     now = _now()
-    search_text = normalize(" ".join(filter(None, [item.title, item.description, item.place_note])))
+    # Qidiruv nom, tavsif va joy bo'yicha ishlaydi (legacy/Topdim.py'dagidek)
+    place = item.place_note or uz.PLACES.get(item.place, "")
+    search_text = normalize(" ".join(filter(None, [item.title, item.description, place])))
     return await db.execute(
         """
         INSERT INTO items (kind, owner_id, category, title, place, place_note,

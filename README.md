@@ -7,6 +7,13 @@ talaba ham e'lon beradi, bot esa ularni bir-biriga topishtirishga yordam beradi.
 > 🔒 Bot telefon raqamini so'ramaydi va hech qachon ko'rsatmaydi. E'lonlarda
 > e'lon egasining ismi yoki username'i ham chiqmaydi.
 
+## Loyiha tarixi
+
+G'oya talaba yozgan konsol dasturidan boshlangan: `legacy/Topdim.py`. U
+e'lonlarni `elonlar.json` faylida saqlaydi va menyu orqali e'lon berish,
+qidirish va o'chirish imkonini beradi. Bot shu g'oyani davom ettiradi;
+dastlabki kod o'rganish uchun o'zgartirilmasdan saqlangan.
+
 ## Imkoniyatlar
 
 Loyiha bosqichma-bosqich quriladi.
@@ -114,6 +121,7 @@ topdim/
     text.py           — matnni normallashtirish, kalit so'zlar
   locales/uz.py       — botning barcha matnlari
 tests/                — pytest testlari
+legacy/Topdim.py      — botning asosi bo'lgan dastlabki konsol dasturi
 ```
 
 ### Qanday ishlaydi (talabalar uchun qisqacha)
