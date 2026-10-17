@@ -11,7 +11,9 @@ o'tiladi. Oxirida barcha javoblar bitta e'lon sifatida bazaga yoziladi.
 
 from datetime import date, timedelta
 
-from aiogram import F, Router
+import logging
+
+from aiogram import Bot, F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message
@@ -24,6 +26,9 @@ from topdim.keyboards import reply
 from topdim.locales import uz
 from topdim.services.cards import format_card
 from topdim.services.dates import MAX_AGE_DAYS, DateInputError, parse_user_date, today_tashkent
+from topdim.services.notifications import notify_matches
+
+logger = logging.getLogger(__name__)
 
 router = Router(name="new_item")
 
@@ -225,7 +230,7 @@ async def show_preview(message: Message, state: FSMContext) -> None:
 
 
 @router.message(NewItemForm.confirm, F.text == uz.BTN_CONFIRM)
-async def confirm_item(message: Message, state: FSMContext, db: Database) -> None:
+async def confirm_item(message: Message, state: FSMContext, db: Database, bot: Bot) -> None:
     data = await state.get_data()
     item_id = await queries.create_item(
         db,
@@ -243,6 +248,13 @@ async def confirm_item(message: Message, state: FSMContext, db: Database) -> Non
     )
     await reset_state(state)
     await message.answer(uz.ITEM_CREATED.format(item_id=item_id), reply_markup=reply.main_menu())
+
+    # 2-bosqich: o'xshash e'lonlarni qidirish. Bu yerda xato bo'lsa ham
+    # e'lon allaqachon saqlangan, shuning uchun foydalanuvchiga ta'sir qilmaydi.
+    try:
+        await notify_matches(bot, db, await queries.get_item(db, item_id))
+    except Exception:
+        logger.exception("E'lon #%s uchun moslashtirishda xato", item_id)
 
 
 # ---------------------------------------------------------------------------

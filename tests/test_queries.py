@@ -91,3 +91,20 @@ async def test_user_items_active_first(db):
 
     items = await queries.list_user_items(db, 1, limit=5, offset=0)
     assert [i.id for i in items] == [fresh, old]
+
+
+async def test_match_candidates_and_save_match(db):
+    lost_id = await queries.create_item(db, new_item(owner_id=1))
+    found_id = await queries.create_item(db, new_item(owner_id=2, kind=ItemKind.FOUND))
+    await queries.create_item(db, new_item(owner_id=3, kind=ItemKind.FOUND, event_date=date(2026, 9, 1)))  # eski
+    await queries.create_item(db, new_item(owner_id=1, kind=ItemKind.FOUND))  # o'ziniki
+    await queries.create_item(db, new_item(owner_id=4))  # bir xil tur
+
+    lost = await queries.get_item(db, lost_id)
+    candidates = await queries.list_match_candidates(db, lost, max_days_apart=14)
+    assert [c.id for c in candidates] == [found_id]
+
+    found = candidates[0]
+    assert await queries.save_match(db, lost, found, 90)
+    # Teskari tartibda ham o'sha juftlik — qayta saqlanmaydi
+    assert not await queries.save_match(db, found, lost, 90)

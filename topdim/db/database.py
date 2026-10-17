@@ -36,6 +36,17 @@ CREATE TABLE IF NOT EXISTS items (
     updated_at     TEXT NOT NULL
 );
 
+-- Topilgan o'xshash juftliklar. UNIQUE tufayli bir juftlik uchun
+-- xabar faqat bir marta yuboriladi.
+CREATE TABLE IF NOT EXISTS matches (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    lost_item_id   INTEGER NOT NULL REFERENCES items(id),
+    found_item_id  INTEGER NOT NULL REFERENCES items(id),
+    score          INTEGER NOT NULL,
+    created_at     TEXT NOT NULL,
+    UNIQUE (lost_item_id, found_item_id)
+);
+
 CREATE INDEX IF NOT EXISTS idx_items_owner ON items(owner_id);
 CREATE INDEX IF NOT EXISTS idx_items_status_kind ON items(status, kind);
 """
@@ -73,12 +84,12 @@ class Database:
     async def execute(self, sql: str, params: Params = ()) -> int:
         """O'zgartiruvchi so'rov (INSERT/UPDATE).
 
-        INSERT uchun yangi qator ID'sini, UPDATE uchun o'zgargan qatorlar sonini
-        qaytaradi.
+        INSERT uchun yangi qator ID'sini (qator qo'shilmagan bo'lsa 0),
+        UPDATE uchun o'zgargan qatorlar sonini qaytaradi.
         """
         cursor = await self.conn.execute(sql, params)
         await self.conn.commit()
-        if sql.lstrip().upper().startswith("INSERT"):
+        if sql.lstrip().upper().startswith("INSERT") and cursor.rowcount > 0:
             return cursor.lastrowid or 0
         return cursor.rowcount
 

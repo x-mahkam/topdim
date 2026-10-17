@@ -206,6 +206,24 @@ ITEM_NOT_YOURS = "Bu amalni faqat e'lon egasi bajara oladi."
 ITEM_NOT_ACTIVE = "Bu e'lon allaqachon yopilgan."
 
 # ---------------------------------------------------------------------------
+# Avtomatik moslashtirish (2-bosqich)
+# ---------------------------------------------------------------------------
+MATCH_FOUND_FOR_NEW = (
+    "🔔 <b>Sizning e'loningizga o'xshash e'lon topildi!</b>\n\n"
+    "Sizning e'loningiz: <b>#{own_id}</b> {own_title}\n"
+    "O'xshash e'lonlar soni: <b>{count}</b> ta\n\n"
+    "Ko'rish uchun tugmani bosing 👇"
+)
+MATCH_FOUND_FOR_EXISTING = (
+    "🔔 <b>Sizning e'loningizga o'xshash e'lon topildi!</b>\n\n"
+    "Sizning e'loningiz: <b>#{own_id}</b> {own_title}\n"
+    "Yangi e'lon: <b>#{other_id}</b> {other_title}\n\n"
+    "Ko'rish uchun tugmani bosing 👇"
+)
+BTN_VIEW = "👀 Ko'rish"
+BTN_VIEW_ITEM = "👀 Ko'rish #{item_id}"
+
+# ---------------------------------------------------------------------------
 # Bot buyruqlari (Telegram menyusida ko'rinadi)
 # ---------------------------------------------------------------------------
 COMMANDS = {

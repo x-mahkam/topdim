@@ -300,3 +300,41 @@ async def test_cancelling_with_photo_card_edits_caption(harness, db):
     done = await harness.press(USER, ItemCallback(action=ItemAction.DO_CANCEL, item_id=1).pack(), with_photo=True)
     assert any(isinstance(m, EditMessageCaption) for m in done)
     assert (await queries.get_item(db, 1)).status is ItemStatus.CANCELLED
+
+
+async def test_similar_item_notifies_both_owners(harness, db):
+    await create_lost_wallet(harness, USER)  # "Qora charm hamyon", Kutubxona, bugun
+
+    # Boshqa talaba o'xshash buyum topadi
+    await harness.text(OTHER, uz.BTN_FOUND)
+    await harness.text(OTHER, uz.CATEGORIES["bag"])
+    await harness.text(OTHER, "Hamyon")
+    await harness.text(OTHER, uz.PLACES["library"])
+    await harness.text(OTHER, uz.BTN_TODAY)
+    await harness.text(OTHER, "Jigarrang, ichida hujjatlar")
+    await harness.text(OTHER, uz.BTN_SKIP)
+    requests = await harness.text(OTHER, uz.BTN_CONFIRM)
+
+    sent = {m.chat_id: m for m in requests if isinstance(m, SendMessage) and "o'xshash" in m.text}
+    assert set(sent) == {USER, OTHER}
+    # Har biri qarama-qarshi e'lonni ko'rish tugmasini oladi
+    assert sent[OTHER].reply_markup.inline_keyboard[0][0].callback_data == ItemCallback(action=ItemAction.VIEW, item_id=1).pack()
+    assert sent[USER].reply_markup.inline_keyboard[0][0].callback_data == ItemCallback(action=ItemAction.VIEW, item_id=2).pack()
+    assert keyboard_texts(sent[USER]) == [uz.BTN_VIEW]
+
+    # "Ko'rish" tugmasi e'lonni ochadi
+    view = await harness.press(USER, ItemCallback(action=ItemAction.VIEW, item_id=2).pack())
+    assert "Hamyon" in view[0].text
+
+
+async def test_unrelated_item_sends_no_match_notice(harness, db):
+    await create_lost_wallet(harness, USER)
+    await harness.text(OTHER, uz.BTN_FOUND)
+    await harness.text(OTHER, uz.CATEGORIES["book"])
+    await harness.text(OTHER, "Fizika darsligi")
+    await harness.text(OTHER, uz.PLACES["gym"])
+    await harness.text(OTHER, uz.BTN_TODAY)
+    await harness.text(OTHER, "Ko'k muqovali")
+    await harness.text(OTHER, uz.BTN_SKIP)
+    requests = await harness.text(OTHER, uz.BTN_CONFIRM)
+    assert not any(isinstance(m, SendMessage) and "o'xshash" in m.text for m in requests)

@@ -6,7 +6,7 @@ o'rinbosarlari orqali beriladi. Bu SQL-injeksiyadan himoya qiladi.
 """
 
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from topdim.db.database import Database
 from topdim.db.models import Item, ItemKind, ItemStatus
@@ -148,3 +148,42 @@ async def close_item(db: Database, item_id: int, owner_id: int, new_status: Item
         (new_status.value, _now(), item_id, owner_id, ItemStatus.ACTIVE.value),
     )
     return changed > 0
+
+
+# ---------------------------------------------------------------------------
+# Moslashtirish (2-bosqich)
+# ---------------------------------------------------------------------------
+async def list_match_candidates(db: Database, item: Item, max_days_apart: int) -> list[Item]:
+    """Yangi e'longa o'xshash bo'lishi mumkin bo'lgan e'lonlar.
+
+    Bazaning o'zida eng oddiy shartlar bilan saralaymiz (qarama-qarshi tur,
+    faol, boshqa egasi, sana oralig'i). Ball esa services/matching.py'da
+    hisoblanadi.
+    """
+    opposite = ItemKind.FOUND if item.kind is ItemKind.LOST else ItemKind.LOST
+    date_from = (item.event_date - timedelta(days=max_days_apart)).isoformat()
+    date_to = (item.event_date + timedelta(days=max_days_apart)).isoformat()
+    rows = await db.fetch_all(
+        """
+        SELECT * FROM items
+        WHERE kind = ? AND status = ? AND owner_id != ?
+          AND event_date BETWEEN ? AND ?
+        ORDER BY id DESC
+        LIMIT 500
+        """,
+        (opposite.value, ItemStatus.ACTIVE.value, item.owner_id, date_from, date_to),
+    )
+    return [Item.from_row(row) for row in rows]
+
+
+async def save_match(db: Database, first: Item, second: Item, score: int) -> bool:
+    """Juftlikni saqlaydi. Yangi juftlik bo'lsa True, avval saqlangan bo'lsa False."""
+    lost, found = (first, second) if first.kind is ItemKind.LOST else (second, first)
+    new_id = await db.execute(
+        """
+        INSERT OR IGNORE INTO matches (lost_item_id, found_item_id, score, created_at)
+        VALUES (?, ?, ?, ?)
+        """,
+        (lost.id, found.id, score, _now()),
+    )
+    return new_id > 0

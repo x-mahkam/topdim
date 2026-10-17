@@ -25,7 +25,11 @@ Loyiha bosqichma-bosqich quriladi.
   - «Mening e'lonlarim»: e'lonni «Qaytarildi» deb belgilash yoki bekor qilish
     (e'lonlar o'chirilmaydi, faqat holati o'zgaradi);
   - tavsifga telefon yoki karta raqami yozilsa, bot uni qabul qilmaydi.
-- [ ] 2-bosqich — o'xshash e'lonlarni avtomatik topish
+- [x] **2-bosqich — o'xshash e'lonlarni avtomatik topish**
+  - yangi e'lon qo'shilganda qarama-qarshi turdagi faol e'lonlar bilan
+    solishtiriladi va ball qo'yiladi (pastdagi jadvalga qarang);
+  - ball chegaradan (50) oshsa, ikkala e'lon egasiga «👀 Ko'rish» tugmali
+    xabar boradi; bir juftlik haqida xabar faqat bir marta yuboriladi.
 - [ ] 3-bosqich — anonim aloqa va egalikni tekshirish
 - [ ] 4-bosqich — QR-yorliq
 - [ ] 5-bosqich — admin paneli va statistika
@@ -115,6 +119,8 @@ topdim/
     inline.py         — xabar ostidagi (inline) tugmalar va callback_data
   services/           — Telegram'ga bog'liq bo'lmagan logika
     cards.py          — e'lon kartochkasi matni
+    matching.py       — o'xshash e'lonlarni topish (ball hisoblash)
+    notifications.py  — moslik haqida xabar yuborish
     dates.py          — sanani tekshirish va formatlash
     pagination.py     — sahifalash
     privacy.py        — telefon/karta raqamini aniqlash
@@ -123,6 +129,26 @@ topdim/
 tests/                — pytest testlari
 legacy/Topdim.py      — botning asosi bo'lgan dastlabki konsol dasturi
 ```
+
+### Avtomatik moslashtirish qanday ishlaydi
+
+`services/matching.py` ikki e'lonni 0–100 ball bilan baholaydi:
+
+| Mezon | Ball |
+|-------|------|
+| Kategoriya bir xil | 30 |
+| Nomdagi so'zlar mos kelishi | 0–40 (umumiy so'zlar ulushiga qarab) |
+| Joy bir xil | 15 |
+| Sana farqi | ≤1 kun: 15, ≤3 kun: 10, ≤14 kun: 5 |
+
+- Sana farqi 14 kundan oshsa, e'lonlar solishtirilmaydi.
+- So'zlar o'zagi bo'yicha solishtiriladi: «kalit» va «kalitlar», «bekati» va
+  «bekatda» mos deb hisoblanadi.
+- Faqat qarama-qarshi turdagi (yo'qolgan ↔ topilgan), faol va boshqa odamga
+  tegishli e'lonlar solishtiriladi.
+- Ballar va chegara (`MATCH_THRESHOLD`) fayl boshida konstanta sifatida
+  berilgan — ularni o'zgartirib tajriba qilib ko'ring va `pytest
+  tests/test_matching.py` bilan tekshiring.
 
 ### Qanday ishlaydi (talabalar uchun qisqacha)
 

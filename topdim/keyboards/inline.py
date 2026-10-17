@@ -104,3 +104,14 @@ def confirm_action(item_id: int, do_action: str, yes_text: str) -> InlineKeyboar
             ]
         ]
     )
+
+
+def view_items(item_ids: list[int]) -> InlineKeyboardMarkup:
+    """Bir yoki bir nechta e'lonni ko'rish tugmalari (har biri alohida qatorda)."""
+    def button(item_id: int) -> InlineKeyboardButton:
+        text = uz.BTN_VIEW if len(item_ids) == 1 else uz.BTN_VIEW_ITEM.format(item_id=item_id)
+        return InlineKeyboardButton(
+            text=text, callback_data=ItemCallback(action=ItemAction.VIEW, item_id=item_id).pack()
+        )
+
+    return InlineKeyboardMarkup(inline_keyboard=[[button(item_id)] for item_id in item_ids])
