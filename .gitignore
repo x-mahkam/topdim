@@ -17,3 +17,6 @@ venv/
 # Muharrirlar
 .vscode/
 .idea/
+
+# Flet build natijalari
+mobile/build/

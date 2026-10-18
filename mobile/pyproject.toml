@@ -1,0 +1,19 @@
+# TOPDIM mobil ilovasi. APK yig'ish:  cd mobile && flet build apk
+[project]
+name = "topdim"
+version = "0.1.0"
+description = "UrDU talabalari uchun yo'qolgan va topilgan buyumlar ilovasi"
+requires-python = ">=3.10"
+dependencies = [
+    "flet==1.0.4",
+    "certifi",  # HTTPS sertifikatlari (Android'da tizimdagilari Python'ga ko'rinmaydi)
+]
+
+[tool.flet]
+org = "uz.urdu"              # Android paket nomi: uz.urdu.topdim
+product = "TOPDIM"           # telefonda ko'rinadigan nom
+company = "Urganch davlat universiteti talabalari"
+copyright = "TOPDIM loyihasi"
+
+[tool.flet.app]
+path = "src"                 # main.py shu papkada

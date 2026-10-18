@@ -200,10 +200,10 @@ async def auth_check(request: web.Request) -> web.Response:
     if user_id is None:
         return web.json_response({"status": "pending"}, status=202)
 
-    # Kod bir martalik: token berilgach o'chiriladi
-    await queries.delete_login_code(db, code)
+    # Avval sessiya yaratiladi, keyin kod o'chiriladi (kod bir martalik)
     token = auth.new_session_token()
     await queries.create_session(db, auth.hash_token(token), user_id)
+    await queries.delete_login_code(db, code)
     return web.json_response({"status": "ok", "token": token})
 
 

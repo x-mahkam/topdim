@@ -1,0 +1,39 @@
+# Android ilovasini (APK) GitHub serverida yig'adi.
+# Tayyor APK: Actions → "Android APK" → oxirgi ishga tushirish → Artifacts → topdim-apk
+name: Android APK
+
+on:
+  push:
+    paths:
+      - "mobile/**"
+      - ".github/workflows/android.yml"
+  workflow_dispatch:   # Actions sahifasidan qo'lda ishga tushirish
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Flet o'rnatish
+        run: pip install "flet==1.0.4" "flet-cli==1.0.4"
+
+      # flet Flutter SDK, JDK va Android SDK'ni o'zi yuklab oladi (--yes)
+      - name: APK yig'ish
+        env:
+          FLET_CLI_NO_RICH_OUTPUT: "1"
+        run: flet build apk --yes --verbose --build-number ${{ github.run_number }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: topdim-apk
+          path: mobile/build/apk/*.apk
+          if-no-files-found: error

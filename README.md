@@ -30,6 +30,9 @@ Loyiha bosqichma-bosqich quriladi.
     solishtiriladi va ball qo'yiladi (pastdagi jadvalga qarang);
   - ball chegaradan (50) oshsa, ikkala e'lon egasiga «👀 Ko'rish» tugmali
     xabar boradi; bir juftlik haqida xabar faqat bir marta yuboriladi.
+- [x] **📱 Android ilova** (`mobile/`) — e'lonlarni ko'rish va qidirish,
+  e'lon berish, «Mening e'lonlarim». Telegram orqali kiriladi (telefon raqami
+  so'ralmaydi), bot bilan bitta bazada ishlaydi.
 - [ ] 3-bosqich — anonim aloqa va egalikni tekshirish
 - [ ] 4-bosqich — QR-yorliq
 - [ ] 5-bosqich — admin paneli va statistika
@@ -70,6 +73,7 @@ pip install -r requirements-dev.txt
    | `BOT_TOKEN` | @BotFather bergan token (majburiy) |
    | `ADMIN_IDS` | adminlarning Telegram ID'lari, vergul bilan (masalan `111,222`). O'z ID'ingizni [@userinfobot](https://t.me/userinfobot) orqali bilib olasiz |
    | `DB_PATH`   | SQLite baza fayli nomi (ixtiyoriy, standart: `topdim.db`) |
+   | `API_PORT`  | mobil ilova uchun server porti (ixtiyoriy, standart: `8080`; `0` — o'chirilgan) |
 
 > ⚠️ `.env` fayl `.gitignore`'ga qo'shilgan — uni hech qachon GitHub'ga
 > yuklamang. Token boshqa odam qo'liga tushsa, @BotFather'da `/revoke` qiling.
@@ -86,6 +90,61 @@ Konsolda `Bot ishga tushdi: @...` yozuvi chiqsa, Telegram'da botingizga
 `/start` yozing. To'xtatish uchun `Ctrl+C` bosing. Ma'lumotlar bazasi fayli
 birinchi ishga tushganda avtomatik yaratiladi.
 
+## 📱 Mobil ilova (Android)
+
+Ilova `mobile/` papkasida, u ham Python'da ([Flet](https://flet.dev)) yozilgan.
+Ilova ma'lumotni o'zida saqlamaydi: u bot bilan **bitta jarayonda** ishlaydigan
+server (API) ga ulanadi. `python -m topdim.bot` ishga tushganda konsolda
+`API ishga tushdi: http://0.0.0.0:8080/...` yozuvi chiqadi.
+
+```
+Telefon (APK)  ──HTTP──▶  API (topdim/api/server.py)  ──▶  topdim.db  ◀──  Telegram bot
+```
+
+### APK'ni yuklab olish
+
+APK'ni GitHub o'zi yig'adi (`.github/workflows/android.yml`):
+
+1. GitHub'da repozitoriyani oching → **Actions** → chapda **Android APK**.
+2. Eng yuqoridagi yashil ✅ ishga tushirishni oching.
+3. Pastdagi **Artifacts** bo'limidan **topdim-apk** ni yuklab oling (zip).
+4. Zip ichidagi `.apk` faylni telefonga o'tkazing va o'rnating
+   (telefon «Noma'lum manbalardan o'rnatish»ga ruxsat so'raydi).
+
+### Telefonni serverga ulash
+
+Eng oson yo'l — kompyuter va telefon **bitta Wi-Fi**'da bo'lsin:
+
+1. Kompyuterda botni ishga tushiring: `python -m topdim.bot`.
+   Windows «Брандмауэр / Firewall» ruxsat so'rasa — **Разрешить** bosing.
+2. Kompyuterning IP manzilini bilib oling: cmd'da `ipconfig` →
+   «IPv4-адрес» (masalan, `192.168.1.5`).
+3. Ilovada **Profil** → «Server manzili»ga `192.168.1.5:8080` yozing →
+   **Saqlash va tekshirish**.
+4. **Telegram orqali kirish** → Telegram ochiladi → botda **✅ Ha, kirish** →
+   ilovaga qayting.
+
+> Ilova hamma joyda (Wi-Fi'siz) ishlashi uchun server internetda turishi
+> kerak (VPS yoki hosting). Bu keyingi qadam bo'ladi.
+
+### Ilovani kompyuterda sinash
+
+```bash
+pip install "flet[all]==1.0.4"
+cd mobile/src
+flet run main.py
+```
+
+### APK'ni o'zingiz yig'ish (ixtiyoriy)
+
+```bash
+cd mobile
+flet build apk
+```
+
+Flet Flutter SDK va Android SDK'ni o'zi yuklab oladi (bir necha GB, birinchi
+marta uzoq davom etadi). Natija: `mobile/build/apk/`.
+
 ## Testlar
 
 ```bash
@@ -95,18 +154,23 @@ pytest
 Testlar internet va haqiqiy token talab qilmaydi: `tests/test_bot_flow.py`
 Telegram o'rniga soxta sessiyadan foydalanadi va botning to'liq ish
 jarayonini (e'lon berish, qidiruv, holatni o'zgartirish) tekshiradi.
+`tests/test_api.py` va `tests/test_mobile_client.py` — mobil ilova API'si va
+ilovaning HTTP mijozi uchun. GitHub'da testlar har bir push'da avtomatik
+ishga tushadi (`.github/workflows/tests.yml`).
 
 ## Loyiha tuzilmasi
 
 ```
 topdim/
-  bot.py              — ishga tushirish nuqtasi: bot, dispatcher, routerlar
+  bot.py              — ishga tushirish nuqtasi: bot, API server, routerlar
   config.py           — .env dan sozlamalarni o'qish
+  api/server.py       — mobil ilova uchun JSON API (aiohttp)
   db/
     database.py       — SQLite ulanishi va jadvallar (yupqa qatlam)
     models.py         — Item, ItemKind, ItemStatus
     queries.py        — barcha SQL so'rovlar
   handlers/           — har bir bo'lim alohida router
+    app_login.py      — ilovaga Telegram orqali kirishni tasdiqlash
     common.py         — /start, /help, «Bekor qilish»
     new_item.py       — e'lon berish (FSM)
     search.py         — qidiruv
@@ -118,6 +182,7 @@ topdim/
     reply.py          — pastki (reply) tugmalar
     inline.py         — xabar ostidagi (inline) tugmalar va callback_data
   services/           — Telegram'ga bog'liq bo'lmagan logika
+    auth.py           — ilovaga kirish kodlari va tokenlar
     cards.py          — e'lon kartochkasi matni
     matching.py       — o'xshash e'lonlarni topish (ball hisoblash)
     notifications.py  — moslik haqida xabar yuborish
@@ -125,7 +190,15 @@ topdim/
     pagination.py     — sahifalash
     privacy.py        — telefon/karta raqamini aniqlash
     text.py           — matnni normallashtirish, kalit so'zlar
+    validation.py     — matn uzunligi va telefon raqami tekshiruvi
   locales/uz.py       — botning barcha matnlari
+mobile/               — Android ilova (Flet)
+  pyproject.toml      — ilova nomi, versiyasi, APK sozlamalari
+  src/main.py         — ekranlar: E'lonlar, E'lon berish, Mening, Profil
+  src/api_client.py   — server bilan ishlovchi HTTP mijoz
+  src/texts.py        — ilovaning barcha matnlari
+  src/assets/icon.png — ilova ikonkasi
+.github/workflows/    — GitHub Actions: testlar va APK yig'ish
 tests/                — pytest testlari
 legacy/Topdim.py      — botning asosi bo'lgan dastlabki konsol dasturi
 ```
