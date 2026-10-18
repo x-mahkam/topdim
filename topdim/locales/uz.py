@@ -238,6 +238,10 @@ APP_LOGIN_EXPIRED = "Bu kirish havolasi eskirgan. Ilovada «Telegram orqali kiri
 # API xatolari (mobil ilovada ko'rsatiladi)
 API_LOGIN_REQUIRED = "Avval Telegram orqali kiring."
 API_BAD_REQUEST = "So'rov noto'g'ri."
+API_NOT_FOUND = (
+    "Bunday manzil yo'q. Ilovada server manzili sifatida faqat IP va portni yozing, "
+    "masalan: 192.168.1.5:8080"
+)
 API_FIELD_REQUIRED = "«{field}» maydonini to'ldiring."
 API_UNKNOWN_CHOICE = "«{field}» uchun noto'g'ri qiymat."
 API_PLACE_NOTE_REQUIRED = "«Boshqa joy» tanlangan bo'lsa, joyni yozing."

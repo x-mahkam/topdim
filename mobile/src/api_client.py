@@ -27,11 +27,18 @@ class ApiError(Exception):
 
 
 def normalize_server_url(text: str) -> str:
-    """"192.168.1.5:8080/" -> "http://192.168.1.5:8080"."""
-    url = text.strip().rstrip("/")
-    if url and "://" not in url:
+    """Manzildan faqat sxema, IP (domen) va portni qoldiradi.
+
+    "192.168.1.5:8080/api/health" -> "http://192.168.1.5:8080"
+    (foydalanuvchi brauzerdagi to'liq manzilni nusxalasa ham ishlaydi).
+    """
+    url = text.strip()
+    if not url:
+        return ""
+    if "://" not in url:
         url = "http://" + url
-    return url
+    parts = urllib.parse.urlsplit(url)
+    return f"{parts.scheme}://{parts.netloc}"
 
 
 def _ssl_context() -> ssl.SSLContext:
@@ -81,6 +88,11 @@ class TopdimApi:
                 message = json.loads(error.read()).get("error") or f"Xato {error.code}"
             except ValueError:
                 message = f"Server xatosi ({error.code})"
+                if error.code == 404:
+                    message = (
+                        "Bu manzilda TOPDIM serveri topilmadi. "
+                        "Faqat IP va portni yozing, masalan: 192.168.1.5:8080"
+                    )
             raise ApiError(message, error.code) from None
         except (urllib.error.URLError, TimeoutError, OSError):
             raise ApiError(

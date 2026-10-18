@@ -65,6 +65,12 @@ async def test_health_and_meta(client):
     assert meta["bot_username"] == "topdim_test_bot"
 
 
+async def test_unknown_url_returns_readable_json(client):
+    response = await client.get("/api/health/api/health")
+    assert response.status == 404
+    assert "192.168.1.5:8080" in (await response.json())["error"]
+
+
 async def test_login_flow(client, db):
     start = await (await client.post("/api/auth/start")).json()
     pending = await client.post("/api/auth/check", json={"code": start["code"]})

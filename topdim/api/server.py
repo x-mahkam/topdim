@@ -74,6 +74,8 @@ async def error_middleware(request: web.Request, handler):
         return await handler(request)
     except ApiError as error:
         return web.json_response({"error": error.message}, status=error.status)
+    except web.HTTPNotFound:
+        return web.json_response({"error": uz.API_NOT_FOUND}, status=404)
 
 
 # ---------------------------------------------------------------------------
