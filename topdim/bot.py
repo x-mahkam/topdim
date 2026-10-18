@@ -15,6 +15,7 @@ from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import BotCommand
 
+from topdim.api.server import create_app, start_api
 from topdim.config import Config, ConfigError, load_config
 from topdim.db.database import Database
 from topdim.handlers import get_routers
@@ -59,15 +60,21 @@ async def main() -> None:
     bot = Bot(config.bot_token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = create_dispatcher(db, config)
 
+    api_runner = None
     try:
         await set_commands(bot)
         me = await bot.get_me()
         logger.info("Bot ishga tushdi: @%s", me.username)
+        # Mobil ilova uchun API — bot bilan bir jarayonda, bir bazada
+        if config.api_port:
+            api_runner = await start_api(create_app(db, bot, me.username), config.api_host, config.api_port)
         await dp.start_polling(bot)
     except TelegramUnauthorizedError:
         logger.error("BOT_TOKEN noto'g'ri. .env fayldagi tokenni @BotFather'dan qayta tekshiring.")
         sys.exit(1)
     finally:
+        if api_runner is not None:
+            await api_runner.cleanup()
         await bot.session.close()
         await db.close()
 

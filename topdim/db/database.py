@@ -47,6 +47,21 @@ CREATE TABLE IF NOT EXISTS matches (
     UNIQUE (lost_item_id, found_item_id)
 );
 
+-- Mobil ilovaga kirish uchun bir martalik kodlar.
+-- user_id bo'sh bo'lsa — foydalanuvchi hali botda tasdiqlamagan.
+CREATE TABLE IF NOT EXISTS login_codes (
+    code        TEXT PRIMARY KEY,
+    user_id     INTEGER,
+    created_at  TEXT NOT NULL
+);
+
+-- Mobil ilova sessiyalari. Tokenning o'zi emas, xeshi saqlanadi.
+CREATE TABLE IF NOT EXISTS sessions (
+    token_hash  TEXT PRIMARY KEY,
+    user_id     INTEGER NOT NULL REFERENCES users(user_id),
+    created_at  TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_items_owner ON items(owner_id);
 CREATE INDEX IF NOT EXISTS idx_items_status_kind ON items(status, kind);
 """
@@ -82,10 +97,10 @@ class Database:
         return self._conn
 
     async def execute(self, sql: str, params: Params = ()) -> int:
-        """O'zgartiruvchi so'rov (INSERT/UPDATE).
+        """O'zgartiruvchi so'rov (INSERT/UPDATE/DELETE).
 
         INSERT uchun yangi qator ID'sini (qator qo'shilmagan bo'lsa 0),
-        UPDATE uchun o'zgargan qatorlar sonini qaytaradi.
+        UPDATE/DELETE uchun o'zgargan qatorlar sonini qaytaradi.
         """
         cursor = await self.conn.execute(sql, params)
         await self.conn.commit()

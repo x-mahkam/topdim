@@ -187,3 +187,47 @@ async def save_match(db: Database, first: Item, second: Item, score: int) -> boo
         (lost.id, found.id, score, _now()),
     )
     return new_id > 0
+
+
+# ---------------------------------------------------------------------------
+# Mobil ilovaga kirish (login kodlari va sessiyalar)
+# ---------------------------------------------------------------------------
+async def create_login_code(db: Database, code: str) -> None:
+    await db.execute("INSERT INTO login_codes (code, created_at) VALUES (?, ?)", (code, _now()))
+
+
+async def get_login_code(db: Database, code: str) -> tuple[int | None, datetime] | None:
+    """Kod egasi (hali tasdiqlanmagan bo'lsa None) va yaratilgan vaqti."""
+    row = await db.fetch_one("SELECT user_id, created_at FROM login_codes WHERE code = ?", (code,))
+    if row is None:
+        return None
+    return row["user_id"], datetime.fromisoformat(row["created_at"])
+
+
+async def confirm_login_code(db: Database, code: str, user_id: int) -> bool:
+    """Botda tasdiqlangan kodni foydalanuvchiga bog'laydi (faqat bir marta)."""
+    await ensure_user(db, user_id)
+    changed = await db.execute(
+        "UPDATE login_codes SET user_id = ? WHERE code = ? AND user_id IS NULL", (user_id, code)
+    )
+    return changed > 0
+
+
+async def delete_login_code(db: Database, code: str) -> None:
+    await db.execute("DELETE FROM login_codes WHERE code = ?", (code,))
+
+
+async def create_session(db: Database, token_hash: str, user_id: int) -> None:
+    await db.execute(
+        "INSERT INTO sessions (token_hash, user_id, created_at) VALUES (?, ?, ?)",
+        (token_hash, user_id, _now()),
+    )
+
+
+async def get_session_user(db: Database, token_hash: str) -> int | None:
+    row = await db.fetch_one("SELECT user_id FROM sessions WHERE token_hash = ?", (token_hash,))
+    return row["user_id"] if row else None
+
+
+async def delete_session(db: Database, token_hash: str) -> None:
+    await db.execute("DELETE FROM sessions WHERE token_hash = ?", (token_hash,))

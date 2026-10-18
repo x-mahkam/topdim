@@ -10,7 +10,6 @@ from itertools import count
 
 import pytest
 from aiogram import Bot
-from aiogram.client.session.base import BaseSession
 from aiogram.methods import (
     AnswerCallbackQuery,
     EditMessageCaption,
@@ -22,6 +21,8 @@ from aiogram.methods import (
 )
 from aiogram.types import CallbackQuery, Chat, Message, PhotoSize, Update, User
 
+from fakes import FakeSession
+
 from topdim.bot import create_dispatcher
 from topdim.config import Config
 from topdim.db import queries
@@ -29,35 +30,6 @@ from topdim.db.models import ItemKind, ItemStatus
 from topdim.keyboards.inline import ItemAction, ItemCallback, PageCallback
 from topdim.locales import uz
 from topdim.services.dates import format_date, today_tashkent
-
-
-class FakeSession(BaseSession):
-    """Telegram API o'rniga ishlaydigan sessiya."""
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.requests: list[TelegramMethod] = []
-        self._message_ids = count(1000)
-
-    async def make_request(self, bot, method, timeout=None):
-        self.requests.append(method)
-        if isinstance(method, (SendMessage, SendPhoto)):
-            photo = [PhotoSize(file_id="f", file_unique_id="u", width=1, height=1)] if isinstance(method, SendPhoto) else None
-            return Message(
-                message_id=next(self._message_ids),
-                date=datetime.now(),
-                chat=Chat(id=method.chat_id, type="private"),
-                text=getattr(method, "text", None),
-                caption=getattr(method, "caption", None),
-                photo=photo,
-            )
-        return True
-
-    async def close(self) -> None:
-        pass
-
-    async def stream_content(self, *args, **kwargs):
-        yield b""
 
 
 _DISPATCHER = None
@@ -338,3 +310,30 @@ async def test_unrelated_item_sends_no_match_notice(harness, db):
     await harness.text(OTHER, uz.BTN_SKIP)
     requests = await harness.text(OTHER, uz.BTN_CONFIRM)
     assert not any(isinstance(m, SendMessage) and "o'xshash" in m.text for m in requests)
+
+
+async def test_app_login_confirmation(harness, db):
+    from topdim.handlers.app_login import LoginCallback
+
+    await queries.create_login_code(db, "abc123")
+    ask = await harness.text(USER, "/start login_abc123")
+    assert last_text(ask) == uz.APP_LOGIN_ASK
+    assert keyboard_texts(ask[-1]) == [uz.BTN_APP_LOGIN_CONFIRM]
+    # Tasdiqlashdan oldin kod hech kimga bog'lanmagan
+    assert (await queries.get_login_code(db, "abc123"))[0] is None
+
+    done = await harness.press(USER, LoginCallback(code="abc123").pack())
+    assert last_text(done) == uz.APP_LOGIN_DONE
+    assert (await queries.get_login_code(db, "abc123"))[0] == USER
+
+    # Ikkinchi marta (yoki boshqa odam) tasdiqlay olmaydi
+    again = await harness.press(OTHER, LoginCallback(code="abc123").pack())
+    assert last_text(again) == uz.APP_LOGIN_EXPIRED
+    assert (await queries.get_login_code(db, "abc123"))[0] == USER
+
+
+async def test_app_login_unknown_code(harness):
+    requests = await harness.text(USER, "/start login_nomalum")
+    assert last_text(requests) == uz.APP_LOGIN_EXPIRED
+    # Oddiy /start buzilmagan
+    assert "TOPDIM" in last_text(await harness.text(USER, "/start"))

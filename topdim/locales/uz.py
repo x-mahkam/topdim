@@ -224,6 +224,25 @@ BTN_VIEW = "👀 Ko'rish"
 BTN_VIEW_ITEM = "👀 Ko'rish #{item_id}"
 
 # ---------------------------------------------------------------------------
+# Mobil ilovaga kirish
+# ---------------------------------------------------------------------------
+APP_LOGIN_ASK = (
+    "📱 <b>TOPDIM ilovasiga kirish</b>\n\n"
+    "Telefoningizdagi TOPDIM ilovasiga shu Telegram akkaunt bilan kirmoqchimisiz?\n\n"
+    "⚠️ Agar bu havolani o'zingiz ochmagan bo'lsangiz, tasdiqlamang."
+)
+BTN_APP_LOGIN_CONFIRM = "✅ Ha, kirish"
+APP_LOGIN_DONE = "✅ Tayyor! Endi ilovaga qayting — u avtomatik ravishda kiradi."
+APP_LOGIN_EXPIRED = "Bu kirish havolasi eskirgan. Ilovada «Telegram orqali kirish» tugmasini qaytadan bosing."
+
+# API xatolari (mobil ilovada ko'rsatiladi)
+API_LOGIN_REQUIRED = "Avval Telegram orqali kiring."
+API_BAD_REQUEST = "So'rov noto'g'ri."
+API_FIELD_REQUIRED = "«{field}» maydonini to'ldiring."
+API_UNKNOWN_CHOICE = "«{field}» uchun noto'g'ri qiymat."
+API_PLACE_NOTE_REQUIRED = "«Boshqa joy» tanlangan bo'lsa, joyni yozing."
+
+# ---------------------------------------------------------------------------
 # Bot buyruqlari (Telegram menyusida ko'rinadi)
 # ---------------------------------------------------------------------------
 COMMANDS = {

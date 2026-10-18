@@ -2,12 +2,13 @@
 
 from aiogram import Router
 
-from topdim.handlers import common, fallback, items, my_items, new_item, search
+from topdim.handlers import app_login, common, fallback, items, my_items, new_item, search
 
 
 def get_routers() -> list[Router]:
     return [
-        common.router,    # /start va «Bekor qilish» — har doim birinchi
+        app_login.router,  # /start login_... — oddiy /start'dan oldin
+        common.router,    # /start va «Bekor qilish»
         new_item.router,
         search.router,
         my_items.router,

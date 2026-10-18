@@ -21,21 +21,25 @@ from aiogram.types import Message
 from topdim.db import queries
 from topdim.db.database import Database
 from topdim.db.models import ItemKind
-from topdim.handlers.utils import code_by_label, reset_state, validate_text
+from topdim.handlers.utils import code_by_label, reset_state
 from topdim.keyboards import reply
 from topdim.locales import uz
 from topdim.services.cards import format_card
 from topdim.services.dates import MAX_AGE_DAYS, DateInputError, parse_user_date, today_tashkent
 from topdim.services.notifications import notify_matches
+from topdim.services.validation import (
+    DESCRIPTION_MAX,
+    DESCRIPTION_MIN,
+    PLACE_MAX,
+    PLACE_MIN,
+    TITLE_MAX,
+    TITLE_MIN,
+    validate_text,
+)
 
 logger = logging.getLogger(__name__)
 
 router = Router(name="new_item")
-
-# Matn uzunligi chegaralari
-TITLE_MIN, TITLE_MAX = 2, 100
-PLACE_MIN, PLACE_MAX = 2, 100
-DESCRIPTION_MIN, DESCRIPTION_MAX = 5, 700  # rasm izohi 1024 belgidan oshmasligi kerak
 
 
 class NewItemForm(StatesGroup):
